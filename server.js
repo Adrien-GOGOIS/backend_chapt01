@@ -18,7 +18,7 @@ app.get("/authors/:authorId", (req, res) => {
 
   if (!author) {
     return res.json({
-      message: "Sorry, this user does not exist!",
+      message: "Sorry, this author does not exist!",
     });
   }
 
@@ -31,11 +31,38 @@ app.get("/authors/:authorId/books", (req, res) => {
 
   if (!book) {
     return res.json({
-      message: "Sorry, this user does not exist!",
+      message: "Sorry, this author does not exist!",
     });
   }
 
   res.json(book.join(", "));
+});
+
+// Routes JSON
+app.get("/json/authors/:id", (req, res, _next) => {
+  const author = authors.authors[req.params.id];
+
+  if (!author) {
+    return res.json({
+      message: "Sorry, this author does not exist!",
+    });
+  }
+
+  delete author.books;
+  res.json(author);
+});
+
+app.get("/json/authors/:id/books", (req, res, _next) => {
+  const author = authors.authors[req.params.id];
+
+  if (!author) {
+    return res.json({
+      message: "Sorry, this author does not exist!",
+    });
+  }
+
+  const obj = (({ books }) => ({ books }))(author);
+  res.json(obj);
 });
 
 // démarrage serveur
