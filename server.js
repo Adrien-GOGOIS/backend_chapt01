@@ -9,7 +9,7 @@ const authors = require("./authors");
 app.get("/", (req, res, _next) => {
   res.send("Authors API");
   console.log(authors.authors[0].name);
-});
+}); // Comment
 
 // Route pour affichage de l'auteur
 app.get("/authors/:authorId", (req, res) => {
