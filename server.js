@@ -1,9 +1,18 @@
 const express = require("express");
-const res = require("express/lib/response");
+
+const dotenv = require("dotenv");
+dotenv.config({
+  path: "./config.env",
+});
+
+const { Pool } = require("pg");
+
 const app = express();
 
+const Postgres = new Pool({ ssl: { rejectUnauthorized: false } });
+
 // import tableau d'auteurs
-const authors = require("./authors");
+// const authors = require("./authors");
 
 // Page d'accueil
 app.get("/", (req, res, _next) => {
@@ -11,58 +20,76 @@ app.get("/", (req, res, _next) => {
   console.log(authors.authors[0].name);
 });
 
-// Route pour affichage de l'auteur
-app.get("/authors/:authorId", (req, res) => {
-  const author = authors.authors[req.params.authorId].name;
-  const nationality = authors.authors[req.params.authorId].nationality;
+let author;
 
-  if (!author) {
-    return res.json({
-      message: "Sorry, this author does not exist!",
+// Route pour affichage de l'auteur
+app.get("/authors/:id", async (req, res) => {
+  try {
+    author = await Postgres.query(
+      "SELECT * FROM authors WHERE authors.author_id=$1",
+      [req.params.id]
+    );
+    res.json(author.rows);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).json({
+      message: "An error happened",
     });
   }
-
-  res.json(author + ", " + nationality);
 });
 
-// Route pour affichage du bouquin
-app.get("/authors/:authorId/books", (req, res) => {
-  const book = authors.authors[req.params.authorId].books;
+let books;
 
-  if (!book) {
-    return res.json({
-      message: "Sorry, this author does not exist!",
+// Route pour affichage du bouquin
+app.get("/authors/:id/books", async (req, res) => {
+  try {
+    books = await Postgres.query(
+      "SELECT books FROM authors WHERE authors.author_id=$1",
+      [req.params.id]
+    );
+    res.json(books.rows[0].books.join(", "));
+  } catch (err) {
+    console.log(err);
+    return res.status(400).json({
+      message: "An error happened",
     });
   }
-
-  res.json(book.join(", "));
 });
 
 // Routes JSON
-app.get("/json/authors/:id", (req, res, _next) => {
-  const author = authors.authors[req.params.id];
-
-  if (!author) {
-    return res.json({
-      message: "Sorry, this author does not exist!",
+app.get("/json/authors/:id", async (req, res, _next) => {
+  try {
+    author = await Postgres.query(
+      "SELECT name, nationality FROM authors WHERE authors.author_id=$1",
+      [req.params.id]
+    );
+    res.json(author.rows[0].name + ", " + author.rows[0].nationality);
+  } catch (err) {
+    console.log(err);
+    return res.status(400).json({
+      message: "An error happened",
     });
   }
-
-  delete author.books;
-  res.json(author);
 });
 
-app.get("/json/authors/:id/books", (req, res, _next) => {
-  const author = authors.authors[req.params.id];
-
-  if (!author) {
-    return res.json({
-      message: "Sorry, this author does not exist!",
+app.get("/json/authors/:id/books", async (req, res, _next) => {
+  try {
+    books = await Postgres.query(
+      "SELECT books FROM authors WHERE authors.author_id=$1",
+      [req.params.id]
+    );
+    res.json(books.rows[0].books.join(", "));
+  } catch (err) {
+    console.log(err);
+    return res.status(400).json({
+      message: "An error happened",
     });
   }
+});
 
-  const obj = (({ books }) => ({ books }))(author);
-  res.json(obj);
+// Route erreur 404
+app.get("*", (req, res) => {
+  res.status(404).send("Author not found");
 });
 
 // démarrage serveur
