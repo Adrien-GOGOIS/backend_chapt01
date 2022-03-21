@@ -18,7 +18,7 @@ const Postgres = new Pool({ ssl: { rejectUnauthorized: false } });
 app.get("/", (req, res, _next) => {
   res.send("Authors API");
   console.log(authors.authors[0].name);
-});
+}); // Comment
 
 let author;
 
